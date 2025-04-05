@@ -355,11 +355,19 @@ export class DatabaseStorage implements IStorage {
         
         // Parse JSON strings if needed
         if (problem.options && typeof problem.options === 'string') {
-          problem.options = JSON.parse(problem.options);
+          try {
+            problem.options = JSON.parse(problem.options);
+          } catch (e) {
+            console.warn("Error parsing options JSON:", e);
+          }
         }
         
         if (problem.tags && typeof problem.tags === 'string') {
-          problem.tags = JSON.parse(problem.tags);
+          try {
+            problem.tags = JSON.parse(problem.tags);
+          } catch (e) {
+            console.warn("Error parsing tags JSON:", e);
+          }
         }
         
         return problem;
@@ -396,11 +404,19 @@ export class DatabaseStorage implements IStorage {
       // Parse the options and tags back to arrays for the return value
       const problem = result[0];
       if (problem.options && typeof problem.options === 'string') {
-        problem.options = JSON.parse(problem.options);
+        try {
+          problem.options = JSON.parse(problem.options);
+        } catch (e) {
+          console.warn("Error parsing options JSON:", e);
+        }
       }
       
       if (problem.tags && typeof problem.tags === 'string') {
-        problem.tags = JSON.parse(problem.tags);
+        try {
+          problem.tags = JSON.parse(problem.tags);
+        } catch (e) {
+          console.warn("Error parsing tags JSON:", e);
+        }
       }
       
       return problem;
@@ -417,11 +433,21 @@ export class DatabaseStorage implements IStorage {
       // Parse JSON strings
       return allProblems.map(problem => {
         if (problem.options && typeof problem.options === 'string') {
-          problem.options = JSON.parse(problem.options);
+          try {
+            problem.options = JSON.parse(problem.options);
+          } catch (e) {
+            // 파싱 실패 시 문자열 그대로 유지
+            console.warn("Error parsing options JSON:", e);
+          }
         }
         
         if (problem.tags && typeof problem.tags === 'string') {
-          problem.tags = JSON.parse(problem.tags);
+          try {
+            problem.tags = JSON.parse(problem.tags);
+          } catch (e) {
+            // 파싱 실패 시 문자열 그대로 유지
+            console.warn("Error parsing tags JSON:", e);
+          }
         }
         
         return problem;
@@ -442,11 +468,19 @@ export class DatabaseStorage implements IStorage {
       // Parse JSON strings
       return userProblems.map(problem => {
         if (problem.options && typeof problem.options === 'string') {
-          problem.options = JSON.parse(problem.options);
+          try {
+            problem.options = JSON.parse(problem.options);
+          } catch (e) {
+            console.warn("Error parsing options JSON:", e);
+          }
         }
         
         if (problem.tags && typeof problem.tags === 'string') {
-          problem.tags = JSON.parse(problem.tags);
+          try {
+            problem.tags = JSON.parse(problem.tags);
+          } catch (e) {
+            console.warn("Error parsing tags JSON:", e);
+          }
         }
         
         return problem;
@@ -472,11 +506,19 @@ export class DatabaseStorage implements IStorage {
         
         // Parse JSON strings
         if (updatedProblem.options && typeof updatedProblem.options === 'string') {
-          updatedProblem.options = JSON.parse(updatedProblem.options);
+          try {
+            updatedProblem.options = JSON.parse(updatedProblem.options);
+          } catch (e) {
+            console.warn("Error parsing options JSON:", e);
+          }
         }
         
         if (updatedProblem.tags && typeof updatedProblem.tags === 'string') {
-          updatedProblem.tags = JSON.parse(updatedProblem.tags);
+          try {
+            updatedProblem.tags = JSON.parse(updatedProblem.tags);
+          } catch (e) {
+            console.warn("Error parsing tags JSON:", e);
+          }
         }
         
         return updatedProblem;
