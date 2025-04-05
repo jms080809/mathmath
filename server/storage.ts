@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser, type UpdateUser,
   problems, type Problem, type InsertProblem, 
   solvedProblems, type SolvedProblem, type InsertSolvedProblem,
-  savedProblems, type SavedProblem, type InsertSavedProblem 
+  savedProblems, type SavedProblem, type InsertSavedProblem,
+  generateUniqueId 
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -17,23 +18,23 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   
   // Problem methods
-  getProblem(id: number): Promise<Problem | undefined>;
+  getProblem(id: string): Promise<Problem | undefined>;
   createProblem(problem: InsertProblem): Promise<Problem>;
   getAllProblems(): Promise<Problem[]>;
   getUserProblems(userId: number): Promise<Problem[]>;
-  incrementSolveCount(problemId: number): Promise<Problem | undefined>;
-  deleteProblem(id: number): Promise<boolean>;
+  incrementSolveCount(problemId: string): Promise<Problem | undefined>;
+  deleteProblem(id: string): Promise<boolean>;
   
   // Solved problems methods
   solveProblem(solvedProblem: InsertSolvedProblem): Promise<SolvedProblem>;
   getUserSolvedProblems(userId: number): Promise<SolvedProblem[]>;
-  checkIfProblemSolved(userId: number, problemId: number): Promise<boolean>;
+  checkIfProblemSolved(userId: number, problemId: string): Promise<boolean>;
   
   // Saved problems methods
   saveProblem(savedProblem: InsertSavedProblem): Promise<SavedProblem>;
-  unsaveProblem(userId: number, problemId: number): Promise<boolean>;
+  unsaveProblem(userId: number, problemId: string): Promise<boolean>;
   getUserSavedProblems(userId: number): Promise<SavedProblem[]>;
-  checkIfProblemSaved(userId: number, problemId: number): Promise<boolean>;
+  checkIfProblemSaved(userId: number, problemId: string): Promise<boolean>;
 }
 
 // WARNING: This class is kept for reference only and is no longer used
@@ -124,12 +125,12 @@ export class MemStorage implements IStorage {
   }
 
   // Problem methods
-  async getProblem(id: number): Promise<Problem | undefined> {
+  async getProblem(id: string): Promise<Problem | undefined> {
     return this.problems.get(id);
   }
 
   async createProblem(insertProblem: InsertProblem): Promise<Problem> {
-    const id = this.problemIdCounter++;
+    const id = generateUniqueId(); // Using time-based ID from schema.ts
     const problem: Problem = {
       ...insertProblem,
       id,

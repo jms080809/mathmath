@@ -10,6 +10,7 @@ import UploadPage from "@/pages/upload";
 import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
+import ProblemDetailPage from "@/pages/problem-detail";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/problem/:id" component={ProblemDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
