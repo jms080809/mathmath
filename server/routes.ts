@@ -208,7 +208,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Problem Routes
   app.get("/api/problems", async (req, res) => {
     try {
-      const problems = await storage.getAllProblems();
+      // 페이지네이션 파라미터 가져오기
+      const page = req.query.page ? parseInt(req.query.page as string) : 0;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const offset = page * limit;
+      
+      // 페이지네이션된 문제 가져오기
+      const problems = await storage.getPaginatedProblems(limit, offset);
       
       const problemsWithAuthor = await Promise.all(
         problems.map(async (problem) => {
@@ -266,24 +272,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/problems/recommend", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      // 가져올 랜덤 문제 수 (기본값: 1)
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 1;
       
-      // Get all problems
-      const allProblems = await storage.getAllProblems();
+      // 최적화된 랜덤 미해결 문제 가져오기
+      const randomProblems = await storage.getRandomUnsolvedProblems(userId, limit);
       
-      // Filter out problems that the user has already solved
-      const unsolvedProblems = await Promise.all(
-        allProblems.map(async (problem) => {
-          const isSolved = await storage.checkIfProblemSolved(userId, problem.id);
-          if (isSolved) {
-            return null; // Skip problems the user has already solved
-          }
-          
+      // 문제가 없으면 빈 배열 반환
+      if (randomProblems.length === 0) {
+        return res.json([]);
+      }
+      
+      // 작성자 정보와 저장 상태 가져오기
+      const problemsWithAuthor = await Promise.all(
+        randomProblems.map(async (problem) => {
           const author = await storage.getUser(problem.authorId);
+          
           if (!author) {
             return null;
           }
           
-          // Check if saved
+          // 저장 상태 확인
           const isSaved = await storage.checkIfProblemSaved(userId, problem.id);
           
           return {
@@ -304,25 +313,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               username: author.username,
               profilePicture: author.profilePicture,
             },
-            isSolved: false,
+            isSolved: false, // 이미 필터링했으므로 항상 false
             isSaved,
           };
         })
       );
       
-      // Filter out nulls
-      const filteredUnsolvedProblems = unsolvedProblems.filter(Boolean);
+      // null 필터링
+      const validProblems = problemsWithAuthor.filter(
+        (problem): problem is NonNullable<typeof problem> => problem !== null
+      );
       
-      // If there are no unsolved problems, return an empty array
-      if (filteredUnsolvedProblems.length === 0) {
-        return res.json([]);
-      }
-      
-      // Randomly select one problem from the unsolved ones
-      const randomIndex = Math.floor(Math.random() * filteredUnsolvedProblems.length);
-      const recommendedProblem = filteredUnsolvedProblems[randomIndex];
-      
-      res.json([recommendedProblem]); // Return as array for consistency with other endpoints
+      res.json(validProblems);
     } catch (error) {
       console.error("Error getting recommended problems:", error);
       res.status(500).json({ message: "Error getting recommended problems" });

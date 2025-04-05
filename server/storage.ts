@@ -21,6 +21,8 @@ export interface IStorage {
   getProblem(id: number): Promise<Problem | undefined>;
   createProblem(problem: InsertProblem): Promise<Problem>;
   getAllProblems(): Promise<Problem[]>;
+  getPaginatedProblems(limit: number, offset: number): Promise<Problem[]>;
+  getRandomUnsolvedProblems(userId: number, limit: number): Promise<Problem[]>;
   getUserProblems(userId: number): Promise<Problem[]>;
   incrementSolveCount(problemId: number): Promise<Problem | undefined>;
   deleteProblem(id: number): Promise<boolean>;
@@ -159,6 +161,56 @@ export class MemStorage implements IStorage {
           return 0;
         }
       });
+  }
+  
+  async getPaginatedProblems(limit: number, offset: number): Promise<Problem[]> {
+    return Array.from(this.problems.values())
+      .sort((a, b) => {
+        if (b.createdAt instanceof Date && a.createdAt instanceof Date) {
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        } else {
+          return 0;
+        }
+      })
+      .slice(offset, offset + limit);
+  }
+  
+  async getRandomUnsolvedProblems(userId: number, limit: number): Promise<Problem[]> {
+    // 사용자가 푼 문제 ID 가져오기
+    const solvedProblems = await this.getUserSolvedProblems(userId);
+    const solvedProblemIds = solvedProblems.map(sp => sp.problemId);
+    
+    // 풀지 않은 문제 필터링
+    const unsolvedProblems = Array.from(this.problems.values())
+      .filter(p => !solvedProblemIds.includes(p.id));
+    
+    // 문제가 없으면 빈 배열 반환
+    if (unsolvedProblems.length === 0) {
+      return [];
+    }
+    
+    // 랜덤으로 limit개 만큼 선택
+    const randomProblems: Problem[] = [];
+    const totalProblems = unsolvedProblems.length;
+    
+    // 요청한 수보다 적은 문제가 있는 경우 모두 반환
+    if (totalProblems <= limit) {
+      return unsolvedProblems;
+    }
+    
+    // 랜덤 인덱스 생성을 위한 집합 (중복 방지)
+    const selectedIndices = new Set<number>();
+    
+    while (randomProblems.length < limit && selectedIndices.size < totalProblems) {
+      const randomIndex = Math.floor(Math.random() * totalProblems);
+      
+      if (!selectedIndices.has(randomIndex)) {
+        selectedIndices.add(randomIndex);
+        randomProblems.push(unsolvedProblems[randomIndex]);
+      }
+    }
+    
+    return randomProblems;
   }
 
   async getUserProblems(userId: number): Promise<Problem[]> {
@@ -454,6 +506,85 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       console.error("Error getting all problems:", error);
+      return [];
+    }
+  }
+  
+  async getPaginatedProblems(limit: number, offset: number): Promise<Problem[]> {
+    try {
+      const paginatedProblems = await db.select()
+        .from(problems)
+        .orderBy(desc(problems.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      // Parse JSON strings
+      return paginatedProblems.map(problem => {
+        if (problem.options && typeof problem.options === 'string') {
+          try {
+            problem.options = JSON.parse(problem.options);
+          } catch (e) {
+            console.warn("Error parsing options JSON:", e);
+          }
+        }
+        
+        if (problem.tags && typeof problem.tags === 'string') {
+          try {
+            problem.tags = JSON.parse(problem.tags);
+          } catch (e) {
+            console.warn("Error parsing tags JSON:", e);
+          }
+        }
+        
+        return problem;
+      });
+    } catch (error) {
+      console.error("Error getting paginated problems:", error);
+      return [];
+    }
+  }
+  
+  async getRandomUnsolvedProblems(userId: number, limit: number): Promise<Problem[]> {
+    try {
+      // 사용자가 푼 문제 ID 목록 가져오기
+      const solvedProblems = await this.getUserSolvedProblems(userId);
+      const solvedProblemIds = solvedProblems.map(sp => sp.problemId);
+      
+      // 모든 문제 가져오기
+      const allProblems = await this.getAllProblems();
+      
+      // 풀지 않은 문제 필터링
+      const unsolvedProblems = allProblems.filter(p => !solvedProblemIds.includes(p.id));
+      
+      // 문제가 없으면 빈 배열 반환
+      if (unsolvedProblems.length === 0) {
+        return [];
+      }
+      
+      // 랜덤으로 limit개 만큼 선택
+      const randomProblems: Problem[] = [];
+      const totalProblems = unsolvedProblems.length;
+      
+      // 요청한 수보다 적은 문제가 있는 경우 모두 반환
+      if (totalProblems <= limit) {
+        return unsolvedProblems;
+      }
+      
+      // 랜덤 인덱스 생성을 위한 집합 (중복 방지)
+      const selectedIndices = new Set<number>();
+      
+      while (randomProblems.length < limit && selectedIndices.size < totalProblems) {
+        const randomIndex = Math.floor(Math.random() * totalProblems);
+        
+        if (!selectedIndices.has(randomIndex)) {
+          selectedIndices.add(randomIndex);
+          randomProblems.push(unsolvedProblems[randomIndex]);
+        }
+      }
+      
+      return randomProblems;
+    } catch (error) {
+      console.error("Error getting random unsolved problems:", error);
       return [];
     }
   }
