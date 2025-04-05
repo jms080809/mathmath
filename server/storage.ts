@@ -379,6 +379,7 @@ export class DatabaseStorage implements IStorage {
         options: insertProblem.options ? JSON.stringify(insertProblem.options) : null,
         tags: insertProblem.tags ? JSON.stringify(insertProblem.tags) : null,
         solveCount: 0,
+        createdAt: new Date(), // Add current date for createdAt
       };
       
       const result = await db.insert(problems).values(problemData).returning();
@@ -500,8 +501,11 @@ export class DatabaseStorage implements IStorage {
   // Solved problems methods
   async solveProblem(insertSolvedProblem: InsertSolvedProblem): Promise<SolvedProblem> {
     try {
-      // Insert the solved problem
-      const result = await db.insert(solvedProblems).values(insertSolvedProblem).returning();
+      // Insert the solved problem with solvedAt timestamp
+      const result = await db.insert(solvedProblems).values({
+        ...insertSolvedProblem,
+        solvedAt: new Date()
+      }).returning();
       
       // Update the problem solve count
       await this.incrementSolveCount(insertSolvedProblem.problemId);
@@ -572,8 +576,11 @@ export class DatabaseStorage implements IStorage {
         if (existing.length) return existing[0];
       }
       
-      // Insert new saved problem
-      const result = await db.insert(savedProblems).values(insertSavedProblem).returning();
+      // Insert new saved problem with timestamp
+      const result = await db.insert(savedProblems).values({
+        ...insertSavedProblem,
+        savedAt: new Date()
+      }).returning();
       return result[0];
     } catch (error) {
       console.error("Error saving problem:", error);

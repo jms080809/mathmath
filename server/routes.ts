@@ -307,13 +307,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         problemData.image = `/uploads/${req.file.filename}`;
       }
       
-      // If we need to modify the schema, we should do it here
-      const modifiedSchema = insertProblemSchema.extend({
-        options: z.array(z.string()).optional(),
-        tags: z.array(z.string()).optional(),
-      });
-      
-      const validatedData = modifiedSchema.parse(problemData);
+      // Use the extended schema from shared/schema.ts
+      const validatedData = insertProblemSchema.parse(problemData);
       const problem = await storage.createProblem(validatedData);
       
       res.status(201).json(problem);
