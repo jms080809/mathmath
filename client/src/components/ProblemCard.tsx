@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Star, Bookmark, BookmarkCheck } from "lucide-react";
+import { CheckCircle, Star, Bookmark, BookmarkCheck, Clock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ProblemWithAuthor, CheckAnswerResponse } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
@@ -27,6 +27,61 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
   const [shortAnswer, setShortAnswer] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedStatus, setSavedStatus] = useState<boolean>(isSaved || false);
+  const [cooldownTimeLeft, setCooldownTimeLeft] = useState<number>(0);
+  const [cooldownInterval, setCooldownInterval] = useState<number | null>(null);
+  
+  // 제한 시간 - 5분(밀리초 단위)
+  const COOLDOWN_TIME = 5 * 60 * 1000; 
+  
+  // 로컬스토리지 키
+  const getLocalStorageKey = (problemId: number) => `problem_cooldown_${problemId}`;
+  
+  // 컴포넌트 마운트 시 쿨다운 상태 확인
+  useEffect(() => {
+    const checkCooldown = () => {
+      // 로컬스토리지에서 쿨다운 정보 가져오기
+      const cooldownData = localStorage.getItem(getLocalStorageKey(problem.id));
+      if (cooldownData) {
+        const { timestamp } = JSON.parse(cooldownData);
+        const now = Date.now();
+        const timePassed = now - timestamp;
+        
+        // 쿨다운 시간이 남아있으면 상태 업데이트
+        if (timePassed < COOLDOWN_TIME) {
+          const remaining = Math.ceil((COOLDOWN_TIME - timePassed) / 1000);
+          setCooldownTimeLeft(remaining);
+          
+          // 타이머 설정
+          if (cooldownInterval === null) {
+            const interval = window.setInterval(() => {
+              setCooldownTimeLeft(prev => {
+                if (prev <= 1) {
+                  clearInterval(interval);
+                  setCooldownInterval(null);
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+            setCooldownInterval(interval as unknown as number);
+          }
+        } else {
+          // 쿨다운 시간이 지났으면 로컬스토리지에서 제거
+          localStorage.removeItem(getLocalStorageKey(problem.id));
+          setCooldownTimeLeft(0);
+        }
+      }
+    };
+    
+    checkCooldown();
+    
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => {
+      if (cooldownInterval !== null) {
+        clearInterval(cooldownInterval);
+      }
+    };
+  }, [problem.id, cooldownInterval]);
   
   const handleOptionSelect = (value: string) => {
     setSelectedOption(value);
@@ -54,6 +109,15 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
       toast({
         title: "Already solved",
         description: "You've already solved this problem",
+      });
+      return;
+    }
+    
+    if (cooldownTimeLeft > 0) {
+      toast({
+        title: "Please wait",
+        description: `Try again after ${Math.floor(cooldownTimeLeft / 60)}:${(cooldownTimeLeft % 60).toString().padStart(2, '0')}`,
+        variant: "destructive",
       });
       return;
     }
@@ -93,9 +157,35 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
           onSolved();
         }
       } else {
+        // 오답 처리: 로컬스토리지에 시간 기록
+        localStorage.setItem(
+          getLocalStorageKey(problem.id),
+          JSON.stringify({ timestamp: Date.now() })
+        );
+        
+        // 쿨다운 시간 설정
+        setCooldownTimeLeft(COOLDOWN_TIME / 1000);
+        
+        // 타이머 시작
+        if (cooldownInterval !== null) {
+          clearInterval(cooldownInterval);
+        }
+        
+        const interval = window.setInterval(() => {
+          setCooldownTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              setCooldownInterval(null);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        setCooldownInterval(interval as unknown as number);
+        
         toast({
           title: "Incorrect",
-          description: "Try again!",
+          description: "You need to wait 5 minutes before trying again",
           variant: "destructive",
         });
       }
@@ -240,6 +330,16 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
             </div>
           </div>
         )}
+        
+        {/* Cooldown Timer Indicator */}
+        {cooldownTimeLeft > 0 && !isSolved && (
+          <div className="mb-3">
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+              <Clock className="h-3 w-3 mr-1" /> 
+              Wait {Math.floor(cooldownTimeLeft / 60)}:{(cooldownTimeLeft % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+        )}
 
         {/* Buttons */}
         <div className="flex space-x-2">
@@ -247,9 +347,16 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
             variant="default"
             className="flex-1"
             onClick={handleSubmitAnswer}
-            disabled={isSubmitting || isSolved || !isAuthenticated}
+            disabled={isSubmitting || isSolved || !isAuthenticated || cooldownTimeLeft > 0}
           >
-            {isSubmitting ? "Submitting..." : isSolved ? "Solved" : "Submit Answer"}
+            {isSubmitting 
+              ? "Submitting..." 
+              : isSolved 
+                ? "Solved" 
+                : cooldownTimeLeft > 0 
+                  ? `Wait ${Math.floor(cooldownTimeLeft / 60)}:${(cooldownTimeLeft % 60).toString().padStart(2, '0')}` 
+                  : "Submit Answer"
+            }
           </Button>
           <Button
             variant="outline"
