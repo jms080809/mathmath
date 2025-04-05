@@ -376,12 +376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/problems/:id/check-answer", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = parseInt(req.params.id);
+      const problemId = req.params.id;
       
-      if (isNaN(problemId)) {
-        return res.status(400).json({ message: "Invalid problem ID" });
-      }
-      
+      // No need to parse to int if using string IDs
       const { answer } = validateAnswerSchema.parse({
         problemId,
         answer: req.body.answer
@@ -449,11 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/problems/:id/save", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = parseInt(req.params.id);
-      
-      if (isNaN(problemId)) {
-        return res.status(400).json({ message: "Invalid problem ID" });
-      }
+      const problemId = req.params.id;
       
       // Check if problem exists
       const problem = await storage.getProblem(problemId);
@@ -476,11 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/problems/:id/save", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = parseInt(req.params.id);
-      
-      if (isNaN(problemId)) {
-        return res.status(400).json({ message: "Invalid problem ID" });
-      }
+      const problemId = req.params.id;
       
       // Unsave problem
       const result = await storage.unsaveProblem(userId, problemId);
