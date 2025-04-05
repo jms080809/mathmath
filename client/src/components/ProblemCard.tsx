@@ -195,7 +195,7 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
         </div>
 
         {/* Multiple Choice */}
-        {problem.type === "multiple-choice" && problem.options && (
+        {problem.type === "multiple-choice" && problem.options && Array.isArray(problem.options) && (
           <div className="mb-4">
             <p className="text-sm font-medium mb-2">Select the value of x:</p>
             <RadioGroup value={selectedOption} onValueChange={handleOptionSelect} disabled={isSolved}>
@@ -206,6 +206,13 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
                 </div>
               ))}
             </RadioGroup>
+          </div>
+        )}
+        
+        {/* Show error message if options is not an array */}
+        {problem.type === "multiple-choice" && problem.options && !Array.isArray(problem.options) && (
+          <div className="mb-4 p-4 border rounded bg-red-50">
+            <p className="text-sm text-red-600">Error loading options for this problem.</p>
           </div>
         )}
 
