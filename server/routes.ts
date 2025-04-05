@@ -275,7 +275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle options for multiple-choice
       if (problemData.type === "multiple-choice" && problemData.options) {
         try {
-          problemData.options = JSON.parse(problemData.options);
+          // Parse JSON string to array and then stringify for database storage
+          const parsedOptions = JSON.parse(problemData.options);
+          // For insertProblemSchema validation, we keep it as string
+          problemData.options = parsedOptions;
         } catch (e) {
           // If parsing fails, assume it's already a string array
           if (typeof problemData.options === "string") {
@@ -287,7 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle tags
       if (problemData.tags) {
         try {
-          problemData.tags = JSON.parse(problemData.tags);
+          // Parse JSON string to array and then stringify for database storage
+          const parsedTags = JSON.parse(problemData.tags);
+          // For insertProblemSchema validation, we keep it as string
+          problemData.tags = parsedTags;
         } catch (e) {
           // If parsing fails, assume it's a comma-separated string
           if (typeof problemData.tags === "string") {
@@ -301,7 +307,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         problemData.image = `/uploads/${req.file.filename}`;
       }
       
-      const validatedData = insertProblemSchema.parse(problemData);
+      // If we need to modify the schema, we should do it here
+      const modifiedSchema = insertProblemSchema.extend({
+        options: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
+      });
+      
+      const validatedData = modifiedSchema.parse(problemData);
       const problem = await storage.createProblem(validatedData);
       
       res.status(201).json(problem);

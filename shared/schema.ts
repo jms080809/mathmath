@@ -48,7 +48,11 @@ export const insertUserSchema = createInsertSchema(users)
   .omit({ id: true, points: true, problemsSolved: true, problemsCreated: true, streak: true, isAdmin: true });
 
 export const insertProblemSchema = createInsertSchema(problems)
-  .omit({ id: true, solveCount: true, createdAt: true });
+  .omit({ id: true, solveCount: true, createdAt: true })
+  .extend({
+    options: z.array(z.string()).optional(),
+    tags: z.array(z.string()).optional()
+  });
 
 export const insertSolvedProblemSchema = createInsertSchema(solvedProblems)
   .omit({ id: true, solvedAt: true });

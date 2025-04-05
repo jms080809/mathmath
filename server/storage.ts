@@ -373,9 +373,9 @@ export class DatabaseStorage implements IStorage {
 
   async createProblem(insertProblem: InsertProblem): Promise<Problem> {
     try {
+      // Prepare data for database storage - convert arrays to JSON strings
       const problemData = {
         ...insertProblem,
-        // Convert arrays to JSON strings for storage
         options: insertProblem.options ? JSON.stringify(insertProblem.options) : null,
         tags: insertProblem.tags ? JSON.stringify(insertProblem.tags) : null,
         solveCount: 0,
