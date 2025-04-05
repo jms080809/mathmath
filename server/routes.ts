@@ -261,6 +261,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error getting problems" });
     }
   });
+  
+  // Recommendation endpoint for getting random unsolved problems
+  app.get("/api/problems/recommend", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get all problems
+      const allProblems = await storage.getAllProblems();
+      
+      // Filter out problems that the user has already solved
+      const unsolvedProblems = await Promise.all(
+        allProblems.map(async (problem) => {
+          const isSolved = await storage.checkIfProblemSolved(userId, problem.id);
+          if (isSolved) {
+            return null; // Skip problems the user has already solved
+          }
+          
+          const author = await storage.getUser(problem.authorId);
+          if (!author) {
+            return null;
+          }
+          
+          // Check if saved
+          const isSaved = await storage.checkIfProblemSaved(userId, problem.id);
+          
+          return {
+            problem: {
+              id: problem.id,
+              text: problem.text,
+              type: problem.type,
+              options: problem.options,
+              image: problem.image,
+              difficulty: problem.difficulty,
+              solveCount: problem.solveCount,
+              createdAt: problem.createdAt instanceof Date 
+                ? problem.createdAt.toISOString() 
+                : String(problem.createdAt),
+            },
+            author: {
+              id: author.id,
+              username: author.username,
+              profilePicture: author.profilePicture,
+            },
+            isSolved: false,
+            isSaved,
+          };
+        })
+      );
+      
+      // Filter out nulls
+      const filteredUnsolvedProblems = unsolvedProblems.filter(Boolean);
+      
+      // If there are no unsolved problems, return an empty array
+      if (filteredUnsolvedProblems.length === 0) {
+        return res.json([]);
+      }
+      
+      // Randomly select one problem from the unsolved ones
+      const randomIndex = Math.floor(Math.random() * filteredUnsolvedProblems.length);
+      const recommendedProblem = filteredUnsolvedProblems[randomIndex];
+      
+      res.json([recommendedProblem]); // Return as array for consistency with other endpoints
+    } catch (error) {
+      console.error("Error getting recommended problems:", error);
+      res.status(500).json({ message: "Error getting recommended problems" });
+    }
+  });
 
   app.post("/api/problems", requireAuth, upload.single("image"), async (req, res) => {
     try {
@@ -376,9 +443,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/problems/:id/check-answer", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = req.params.id;
+      const problemId = parseInt(req.params.id, 10);
       
-      // No need to parse to int if using string IDs
+      // Convert problemId to number 
       const { answer } = validateAnswerSchema.parse({
         problemId,
         answer: req.body.answer
@@ -446,7 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/problems/:id/save", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = req.params.id;
+      const problemId = parseInt(req.params.id, 10);
       
       // Check if problem exists
       const problem = await storage.getProblem(problemId);
@@ -469,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/problems/:id/save", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const problemId = req.params.id;
+      const problemId = parseInt(req.params.id, 10);
       
       // Unsave problem
       const result = await storage.unsaveProblem(userId, problemId);

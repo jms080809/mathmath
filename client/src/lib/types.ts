@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface Problem {
-  id: string; // Changed to string for timestamp-based IDs
+  id: number; // Changed to number for database IDs
   text: string;
   type: "multiple-choice" | "short-answer";
   options?: string[];
