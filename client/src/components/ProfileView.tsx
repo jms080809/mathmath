@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "./Layout";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowLeft, Settings, Star, Edit } from "lucide-react";
+import { ArrowLeft, Settings, Star, Edit, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -141,50 +141,59 @@ export function ProfileView() {
           <span className="ml-1">points</span>
         </div>
         
-        <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="mt-4">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Your Profile</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleProfileUpdate} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input 
-                  id="username" 
-                  defaultValue={user.username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="profile-picture">Profile Picture</Label>
-                <Input 
-                  id="profile-picture" 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isUpdating}>
-                {isUpdating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
+        <div className="flex gap-3 mt-4">
+          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Your Profile</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleProfileUpdate} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input 
+                    id="username" 
+                    defaultValue={user.username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="profile-picture">Profile Picture</Label>
+                  <Input 
+                    id="profile-picture" 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          
+          {user.isAdmin ? (
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
+              <Shield className="h-4 w-4 mr-2" />
+              Admin Dashboard
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {/* Stats Section */}
@@ -250,7 +259,7 @@ export function ProfileView() {
             <div className="flex justify-center py-10">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : savedProblems && savedProblems.length > 0 ? (
+          ) : savedProblems && Array.isArray(savedProblems) && savedProblems.length > 0 ? (
             <div className="grid grid-cols-3 gap-1">
               {savedProblems.map((item: any) => (
                 <div

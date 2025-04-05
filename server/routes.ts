@@ -631,6 +631,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error getting users" });
     }
   });
+  
+  // Special endpoint to grant admin privileges - FOR DEVELOPMENT ONLY
+  // This would be removed or properly secured in production
+  app.post("/api/grant-admin", async (req, res) => {
+    try {
+      const { username } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Grant admin privileges
+      const updatedUser = await storage.updateUser(user.id, { 
+        isAdmin: 1 // Using 1 for true since SQLite uses integers
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user" });
+      }
+      
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json({ 
+        message: "Admin privileges granted successfully",
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error granting admin privileges" });
+    }
+  });
 
   app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
