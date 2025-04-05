@@ -731,6 +731,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error deleting user" });
     }
   });
+  
+  // Admin endpoint to update user details
+  app.put("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const { username, isAdmin, points } = req.body;
+      
+      // Validate input
+      if (!username && isAdmin === undefined && points === undefined) {
+        return res.status(400).json({ message: "No data provided for update" });
+      }
+      
+      // Prepare update data
+      const updateData: any = {};
+      
+      if (username) updateData.username = username;
+      if (isAdmin !== undefined) updateData.isAdmin = isAdmin ? 1 : 0;
+      if (points !== undefined) updateData.points = points;
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user data without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json({
+        message: "User updated successfully",
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error updating user" });
+    }
+  });
 
   app.delete("/api/admin/problems/:id", requireAdmin, async (req, res) => {
     try {

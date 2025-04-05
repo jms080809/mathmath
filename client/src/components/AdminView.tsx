@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "./Layout";
-import { LogOut, Users, Check, Star, Edit, Trash2, Loader2 } from "lucide-react";
+import { LogOut, Users, Check, Star, Edit, Trash2, Loader2, Shield, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,11 @@ import { useAuth } from "@/context/AuthContext";
 import { AvatarPlaceholder } from "./ui/avatar-placeholder";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 export function AdminView() {
   const [, navigate] = useLocation();
@@ -36,6 +41,20 @@ export function AdminView() {
     open: false,
     problemId: null,
     problemText: "",
+  });
+  
+  const [editUserDialog, setEditUserDialog] = useState<{
+    open: boolean;
+    userId: number | null;
+    userData: {
+      username: string;
+      isAdmin: boolean;
+      points: number;
+    } | null;
+  }>({
+    open: false,
+    userId: null,
+    userData: null,
   });
   
   const { data: users, isLoading: isLoadingUsers } = useQuery({ 
@@ -90,6 +109,46 @@ export function AdminView() {
       toast({
         title: "Error",
         description: "Failed to delete problem",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleOpenEditUser = (userData: any) => {
+    setEditUserDialog({
+      open: true,
+      userId: userData.id,
+      userData: {
+        username: userData.username,
+        isAdmin: userData.isAdmin,
+        points: userData.points || 0
+      }
+    });
+  };
+  
+  const handleUpdateUser = async () => {
+    if (!editUserDialog.userId || !editUserDialog.userData) return;
+    
+    try {
+      const { userData } = editUserDialog;
+      
+      await apiRequest("PUT", `/api/admin/users/${editUserDialog.userId}`, {
+        username: userData.username,
+        isAdmin: userData.isAdmin,
+        points: userData.points
+      });
+      
+      toast({
+        title: "User updated",
+        description: `${userData.username} has been updated successfully`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditUserDialog({ open: false, userId: null, userData: null });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user",
         variant: "destructive",
       });
     }
@@ -165,7 +224,7 @@ export function AdminView() {
                               variant="ghost"
                               size="sm"
                               className="text-indigo-600 hover:text-indigo-900"
-                              onClick={() => console.log("Edit user", user.id)}
+                              onClick={() => handleOpenEditUser(user)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -327,6 +386,83 @@ export function AdminView() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteProblem}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit User Dialog */}
+      <Dialog open={editUserDialog.open} onOpenChange={(open) => !open && setEditUserDialog({ ...editUserDialog, open })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editUserDialog.userData && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  value={editUserDialog.userData.username} 
+                  onChange={(e) => setEditUserDialog({
+                    ...editUserDialog,
+                    userData: {
+                      ...editUserDialog.userData!,
+                      username: e.target.value
+                    }
+                  })} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="points">Points</Label>
+                <Input 
+                  id="points" 
+                  type="number"
+                  value={editUserDialog.userData.points} 
+                  onChange={(e) => setEditUserDialog({
+                    ...editUserDialog,
+                    userData: {
+                      ...editUserDialog.userData!,
+                      points: parseInt(e.target.value) || 0
+                    }
+                  })} 
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="admin"
+                  checked={editUserDialog.userData.isAdmin}
+                  onCheckedChange={(checked) => setEditUserDialog({
+                    ...editUserDialog,
+                    userData: {
+                      ...editUserDialog.userData!,
+                      isAdmin: checked
+                    }
+                  })}
+                />
+                <Label htmlFor="admin" className="flex items-center gap-2">
+                  <Shield className={`h-4 w-4 ${editUserDialog.userData.isAdmin ? 'text-green-500' : 'text-gray-400'}`} />
+                  Admin Privileges
+                </Label>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="sm:justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setEditUserDialog({ open: false, userId: null, userData: null })}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateUser}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
