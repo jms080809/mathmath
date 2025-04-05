@@ -32,11 +32,12 @@ export function FeedView() {
       }
       return response.json();
     },
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: any[], allPages) => {
       // 마지막 페이지가 비어있거나 데이터가 5개 미만이면 더 이상 데이터가
       // 없다고 판단하고 undefined 반환
       return lastPage.length < 5 ? undefined : allPages.length;
     },
+    initialPageParam: 0,
     staleTime: 1000 * 60, // 1 minute
     enabled: feedType === "all" || !isAuthenticated,
   });
@@ -59,10 +60,11 @@ export function FeedView() {
       }
       return response.json();
     },
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: any[], allPages) => {
       // 추천 문제는 기본적으로 무한 로드 가능 (랜덤으로 가져옴)
       return lastPage.length > 0 ? allPages.length : undefined;
     },
+    initialPageParam: 0,
     staleTime: 1000 * 30, // 30 seconds
     enabled: feedType === "recommended" && isAuthenticated,
   });

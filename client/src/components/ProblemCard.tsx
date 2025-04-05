@@ -23,10 +23,13 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   
+  // 자신이 올린 문제인지 확인
+  const isAuthoredByUser = user && author.id === user.id;
+  
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [shortAnswer, setShortAnswer] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [savedStatus, setSavedStatus] = useState<boolean>(isSaved || false);
+  const [savedStatus, setSavedStatus] = useState<boolean>(isSaved === true);
   const [cooldownTimeLeft, setCooldownTimeLeft] = useState<number>(0);
   const [cooldownInterval, setCooldownInterval] = useState<number | null>(null);
   
@@ -109,6 +112,15 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
       toast({
         title: "Already solved",
         description: "You've already solved this problem",
+      });
+      return;
+    }
+    
+    if (isAuthoredByUser) {
+      toast({
+        title: "Cannot solve own problem",
+        description: "You cannot solve problems that you created",
+        variant: "destructive",
       });
       return;
     }
@@ -340,6 +352,16 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
             </div>
           </div>
         )}
+        
+        {/* User's Own Problem Indicator */}
+        {isAuthoredByUser && (
+          <div className="mb-3">
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+              <Star className="h-3 w-3 mr-1" /> 
+              Your problem (cannot solve)
+            </div>
+          </div>
+        )}
 
         {/* Buttons */}
         <div className="flex space-x-2">
@@ -347,15 +369,17 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
             variant="default"
             className="flex-1"
             onClick={handleSubmitAnswer}
-            disabled={isSubmitting || isSolved || !isAuthenticated || cooldownTimeLeft > 0}
+            disabled={isSubmitting || isSolved || !isAuthenticated || cooldownTimeLeft > 0 || isAuthoredByUser}
           >
             {isSubmitting 
               ? "Submitting..." 
               : isSolved 
                 ? "Solved" 
-                : cooldownTimeLeft > 0 
-                  ? `Wait ${Math.floor(cooldownTimeLeft / 60)}:${(cooldownTimeLeft % 60).toString().padStart(2, '0')}` 
-                  : "Submit Answer"
+                : isAuthoredByUser
+                  ? "Your problem"
+                  : cooldownTimeLeft > 0 
+                    ? `Wait ${Math.floor(cooldownTimeLeft / 60)}:${(cooldownTimeLeft % 60).toString().padStart(2, '0')}` 
+                    : "Submit Answer"
             }
           </Button>
           <Button

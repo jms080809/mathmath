@@ -465,6 +465,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Problem not found" });
       }
       
+      // 사용자가 올린 문제인지 확인 (자신이 올린 문제는 풀 수 없음)
+      if (problem.authorId === userId) {
+        return res.status(400).json({ 
+          message: "You cannot solve your own problem", 
+          correct: false 
+        });
+      }
+      
       // Check answer
       const isCorrect = problem.correctAnswer === answer;
       
