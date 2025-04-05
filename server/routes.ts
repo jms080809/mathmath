@@ -570,6 +570,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error getting user problems" });
     }
   });
+  
+  // Get user profile by ID
+  app.get("/api/users/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return password
+      const { password, ...userWithoutPassword } = user;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Error getting user profile" });
+    }
+  });
+  
+  // Get problems created by a specific user
+  app.get("/api/users/:userId/problems", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const problems = await storage.getUserProblems(userId);
+      
+      res.json(problems);
+    } catch (error) {
+      res.status(500).json({ message: "Error getting user problems" });
+    }
+  });
 
   app.get("/api/users/me/solved", requireAuth, async (req, res) => {
     try {

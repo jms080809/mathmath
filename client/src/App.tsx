@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
 import ProblemDetailPage from "@/pages/problem-detail";
+import UserProfilePage from "@/pages/user-profile";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/problem/:id" component={ProblemDetailPage} />
+      <Route path="/user/:userId" component={UserProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

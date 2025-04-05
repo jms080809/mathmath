@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLocation } from "wouter";
 
 interface ProblemCardProps {
   problemData: ProblemWithAuthor;
@@ -22,6 +23,7 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
   const { problem, author, isSolved, isSaved } = problemData;
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   
   // 자신이 올린 문제인지 확인
   const isAuthoredByUser = user && author.id === user.id;
@@ -276,7 +278,15 @@ export function ProblemCard({ problemData, onSolved }: ProblemCardProps) {
       <div className="px-4 py-2 flex items-center">
         <AvatarPlaceholder user={author as any} size="sm" />
         <div className="ml-2">
-          <p className="text-sm font-semibold">{author.username}</p>
+          <button 
+            className="text-sm font-semibold hover:text-primary transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/user/${author.id}`);
+            }}
+          >
+            {author.username}
+          </button>
           <p className="text-xs text-gray-500">{formatTimeAgo(problem.createdAt)}</p>
         </div>
       </div>
