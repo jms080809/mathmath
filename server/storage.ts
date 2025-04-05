@@ -18,23 +18,23 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   
   // Problem methods
-  getProblem(id: string): Promise<Problem | undefined>;
+  getProblem(id: number): Promise<Problem | undefined>;
   createProblem(problem: InsertProblem): Promise<Problem>;
   getAllProblems(): Promise<Problem[]>;
   getUserProblems(userId: number): Promise<Problem[]>;
-  incrementSolveCount(problemId: string): Promise<Problem | undefined>;
-  deleteProblem(id: string): Promise<boolean>;
+  incrementSolveCount(problemId: number): Promise<Problem | undefined>;
+  deleteProblem(id: number): Promise<boolean>;
   
   // Solved problems methods
   solveProblem(solvedProblem: InsertSolvedProblem): Promise<SolvedProblem>;
   getUserSolvedProblems(userId: number): Promise<SolvedProblem[]>;
-  checkIfProblemSolved(userId: number, problemId: string): Promise<boolean>;
+  checkIfProblemSolved(userId: number, problemId: number): Promise<boolean>;
   
   // Saved problems methods
   saveProblem(savedProblem: InsertSavedProblem): Promise<SavedProblem>;
-  unsaveProblem(userId: number, problemId: string): Promise<boolean>;
+  unsaveProblem(userId: number, problemId: number): Promise<boolean>;
   getUserSavedProblems(userId: number): Promise<SavedProblem[]>;
-  checkIfProblemSaved(userId: number, problemId: string): Promise<boolean>;
+  checkIfProblemSaved(userId: number, problemId: number): Promise<boolean>;
 }
 
 // WARNING: This class is kept for reference only and is no longer used
@@ -125,7 +125,7 @@ export class MemStorage implements IStorage {
   }
 
   // Problem methods
-  async getProblem(id: string): Promise<Problem | undefined> {
+  async getProblem(id: number): Promise<Problem | undefined> {
     return this.problems.get(id);
   }
 

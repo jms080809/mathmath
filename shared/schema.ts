@@ -20,7 +20,7 @@ export const users = sqliteTable("users", {
 });
 
 export const problems = sqliteTable("problems", {
-  id: text("id").primaryKey(), // Using text field for custom time-based ID format
+  id: integer("id").primaryKey({ autoIncrement: true }),
   authorId: integer("author_id").notNull(),
   type: text("type").notNull(), // "multiple-choice" or "short-answer"
   text: text("text").notNull(),
@@ -36,7 +36,7 @@ export const problems = sqliteTable("problems", {
 export const solvedProblems = sqliteTable("solved_problems", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
-  problemId: text("problem_id").notNull(), // Changed to text to match problem id format
+  problemId: integer("problem_id").notNull(),
   solvedAt: integer("solved_at", { mode: "timestamp" }).notNull(),
   pointsEarned: integer("points_earned").notNull(),
 });
@@ -44,7 +44,7 @@ export const solvedProblems = sqliteTable("solved_problems", {
 export const savedProblems = sqliteTable("saved_problems", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
-  problemId: text("problem_id").notNull(), // Changed to text to match problem id format
+  problemId: integer("problem_id").notNull(),
   savedAt: integer("saved_at", { mode: "timestamp" }).notNull(),
 });
 
@@ -81,7 +81,7 @@ export type InsertSavedProblem = z.infer<typeof insertSavedProblemSchema>;
 // View Schema Extensions
 export const problemWithAuthorSchema = z.object({
   problem: z.object({
-    id: z.string(), // Changed to string for time-based IDs
+    id: z.number(),
     text: z.string(),
     type: z.enum(["multiple-choice", "short-answer"]),
     options: z.array(z.string()).optional(),
@@ -102,7 +102,7 @@ export const problemWithAuthorSchema = z.object({
 export type ProblemWithAuthor = z.infer<typeof problemWithAuthorSchema>;
 
 export const validateAnswerSchema = z.object({
-  problemId: z.string(), // Changed to string for time-based IDs
+  problemId: z.number(),
   answer: z.string(),
 });
 
