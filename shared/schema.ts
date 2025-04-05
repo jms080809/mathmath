@@ -1,9 +1,9 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   points: integer("points").default(0).notNull(),
@@ -11,36 +11,36 @@ export const users = pgTable("users", {
   problemsSolved: integer("problems_solved").default(0).notNull(),
   problemsCreated: integer("problems_created").default(0).notNull(),
   streak: integer("streak").default(0).notNull(),
-  isAdmin: boolean("is_admin").default(false).notNull(),
+  isAdmin: integer("is_admin").default(0).notNull(),
 });
 
-export const problems = pgTable("problems", {
-  id: serial("id").primaryKey(),
+export const problems = sqliteTable("problems", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   authorId: integer("author_id").notNull(),
-  type: text("type", { enum: ["multiple-choice", "short-answer"] }).notNull(),
+  type: text("type").notNull(), // "multiple-choice" or "short-answer"
   text: text("text").notNull(),
   image: text("image"),
-  options: json("options").$type<string[]>(),
+  options: text("options"), // Will store JSON as string
   correctAnswer: text("correct_answer").notNull(),
-  difficulty: text("difficulty", { enum: ["easy", "medium", "hard"] }).default("medium").notNull(),
-  tags: text("tags").array(),
+  difficulty: text("difficulty").default("medium").notNull(), // "easy", "medium", or "hard"
+  tags: text("tags"), // Will store JSON as string
   solveCount: integer("solve_count").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
-export const solvedProblems = pgTable("solved_problems", {
-  id: serial("id").primaryKey(),
+export const solvedProblems = sqliteTable("solved_problems", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
   problemId: integer("problem_id").notNull(),
-  solvedAt: timestamp("solved_at").defaultNow().notNull(),
+  solvedAt: integer("solved_at", { mode: "timestamp" }).notNull(),
   pointsEarned: integer("points_earned").notNull(),
 });
 
-export const savedProblems = pgTable("saved_problems", {
-  id: serial("id").primaryKey(),
+export const savedProblems = sqliteTable("saved_problems", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
   problemId: integer("problem_id").notNull(),
-  savedAt: timestamp("saved_at").defaultNow().notNull(),
+  savedAt: integer("saved_at", { mode: "timestamp" }).notNull(),
 });
 
 // Insert Schemas
