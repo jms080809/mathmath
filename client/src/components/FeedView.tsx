@@ -5,7 +5,12 @@ import { Layout } from "./Layout";
 import { ProblemWithAuthor } from "@/lib/types";
 import { Loader2, MoreHorizontal, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient } from "@/lib/queryClient";
@@ -13,20 +18,26 @@ import { queryClient } from "@/lib/queryClient";
 export function FeedView() {
   const { isAuthenticated, user } = useAuth();
   const [feedRefreshKey, setFeedRefreshKey] = useState(0);
-  const [feedType, setFeedType] = useState<"all" | "recommended">("all");
-  
+  const [feedType, setFeedType] = useState<"all" | "recommended">(
+    "recommended"
+  );
+
   // InfiniteQuery for all problems with pagination
-  const { 
-    data: allProblemsData, 
-    isLoading: allLoading, 
+  const {
+    data: allProblemsData,
+    isLoading: allLoading,
     isError: allError,
     fetchNextPage: fetchNextAllProblems,
     hasNextPage: hasMoreAllProblems,
-    isFetchingNextPage: isFetchingNextAllProblems
+    isFetchingNextPage: isFetchingNextAllProblems,
   } = useInfiniteQuery({
     queryKey: ["/api/problems", feedRefreshKey],
     queryFn: async ({ pageParam = 0 }) => {
-      const response = await fetch(`/api/problems?page=${pageParam}&limit=5${user ? `&userId=${user.id}` : ''}`);
+      const response = await fetch(
+        `/api/problems?page=${pageParam}&limit=5${
+          user ? `&userId=${user.id}` : ""
+        }`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch problems");
       }
@@ -41,16 +52,16 @@ export function FeedView() {
     staleTime: 1000 * 60, // 1 minute
     enabled: feedType === "all" || !isAuthenticated,
   });
-  
+
   // InfiniteQuery for recommended problems
-  const { 
-    data: recommendedProblemsData, 
-    isLoading: recommendedLoading, 
+  const {
+    data: recommendedProblemsData,
+    isLoading: recommendedLoading,
     isError: recommendedError,
     fetchNextPage: fetchNextRecommended,
     hasNextPage: hasMoreRecommended,
     isFetchingNextPage: isFetchingNextRecommended,
-    refetch: refetchRecommended
+    refetch: refetchRecommended,
   } = useInfiniteQuery({
     queryKey: ["/api/problems/recommend", feedRefreshKey],
     queryFn: async ({ pageParam = 0 }) => {
@@ -68,36 +79,43 @@ export function FeedView() {
     staleTime: 1000 * 30, // 30 seconds
     enabled: feedType === "recommended" && isAuthenticated,
   });
-  
+
   // Intersection Observer for infinite scroll
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
-    if (isFetchingNextAllProblems || isFetchingNextRecommended) return;
-    
-    if (observerRef.current) observerRef.current.disconnect();
-    
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        if (feedType === "all" && hasMoreAllProblems) {
-          fetchNextAllProblems();
-        } else if (feedType === "recommended" && hasMoreRecommended && isAuthenticated) {
-          fetchNextRecommended();
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetchingNextAllProblems || isFetchingNextRecommended) return;
+
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          if (feedType === "all" && hasMoreAllProblems) {
+            fetchNextAllProblems();
+          } else if (
+            feedType === "recommended" &&
+            hasMoreRecommended &&
+            isAuthenticated
+          ) {
+            fetchNextRecommended();
+          }
         }
-      }
-    });
-    
-    if (node) observerRef.current.observe(node);
-  }, [
-    feedType, 
-    hasMoreAllProblems, 
-    hasMoreRecommended, 
-    fetchNextAllProblems, 
-    fetchNextRecommended, 
-    isFetchingNextAllProblems, 
-    isFetchingNextRecommended,
-    isAuthenticated
-  ]);
-  
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [
+      feedType,
+      hasMoreAllProblems,
+      hasMoreRecommended,
+      fetchNextAllProblems,
+      fetchNextRecommended,
+      isFetchingNextAllProblems,
+      isFetchingNextRecommended,
+      isAuthenticated,
+    ]
+  );
+
   // Clean up the observer on component unmount
   useEffect(() => {
     return () => {
@@ -106,55 +124,79 @@ export function FeedView() {
       }
     };
   }, []);
-  
+
   const handleProblemSolved = () => {
     // Trigger a refresh of the feed
-    setFeedRefreshKey(prev => prev + 1);
+    setFeedRefreshKey((prev) => prev + 1);
   };
-  
+
   const handleGetNewRecommendation = () => {
     refetchRecommended();
   };
-  
+
   // Flatten the pages data
   const allProblems = allProblemsData?.pages.flat() || [];
   const recommendedProblems = recommendedProblemsData?.pages.flat() || [];
-  
+
   // Determine which data, loading and error states to use based on feedType
-  const problems = feedType === "recommended" && isAuthenticated ? recommendedProblems : allProblems;
-  const isLoading = feedType === "recommended" && isAuthenticated ? recommendedLoading : allLoading;
-  const isError = feedType === "recommended" && isAuthenticated ? recommendedError : allError;
-  const isFetchingNext = feedType === "recommended" && isAuthenticated ? isFetchingNextRecommended : isFetchingNextAllProblems;
-  const hasMoreProblems = feedType === "recommended" && isAuthenticated ? hasMoreRecommended : hasMoreAllProblems;
-  
+  const problems =
+    feedType === "recommended" && isAuthenticated
+      ? recommendedProblems
+      : allProblems;
+  const isLoading =
+    feedType === "recommended" && isAuthenticated
+      ? recommendedLoading
+      : allLoading;
+  const isError =
+    feedType === "recommended" && isAuthenticated ? recommendedError : allError;
+  const isFetchingNext =
+    feedType === "recommended" && isAuthenticated
+      ? isFetchingNextRecommended
+      : isFetchingNextAllProblems;
+  const hasMoreProblems =
+    feedType === "recommended" && isAuthenticated
+      ? hasMoreRecommended
+      : hasMoreAllProblems;
+
   const handleFeedTypeChange = (value: string) => {
     setFeedType(value as "all" | "recommended");
-    
+
     // 문제 목록이 없으면 첫 페이지 로드
-    if ((value === "all" && !allProblemsData) || (value === "recommended" && !recommendedProblemsData)) {
-      setFeedRefreshKey(prev => prev + 1);
+    if (
+      (value === "all" && !allProblemsData) ||
+      (value === "recommended" && !recommendedProblemsData)
+    ) {
+      setFeedRefreshKey((prev) => prev + 1);
     }
   };
-  
+
   if (isLoading && !problems.length) {
     return (
-      <Layout title="MathSolve" rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}>
+      <Layout
+        title="MathSolve"
+        rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}
+      >
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Layout>
     );
   }
-  
+
   if (isError && !problems.length) {
     return (
-      <Layout title="MathSolve" rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}>
+      <Layout
+        title="MathSolve"
+        rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}
+      >
         <div className="flex flex-col items-center justify-center h-96 p-4">
           <h3 className="text-lg font-semibold mb-2">Error loading problems</h3>
-          <p className="text-gray-500 mb-4">There was an error loading the feed.</p>
-          <Button 
-            variant="outline" 
-            onClick={() => setFeedRefreshKey(prev => prev + 1)}
+          <p className="text-gray-500 mb-4">
+            There was an error loading the feed.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setFeedRefreshKey((prev) => prev + 1)}
           >
             Retry
           </Button>
@@ -162,22 +204,25 @@ export function FeedView() {
       </Layout>
     );
   }
-  
+
   return (
-    <Layout title="MathSolve" rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}>
+    <Layout
+      title="2-9반 수학 릴레이"
+      rightAction={<OptionsMenu isAuthenticated={isAuthenticated} />}
+    >
       {isAuthenticated && (
-        <Tabs 
-          value={feedType} 
+        <Tabs
+          value={feedType}
           onValueChange={handleFeedTypeChange}
           className="mb-4"
         >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="all">All Problems</TabsTrigger>
-            <TabsTrigger value="recommended">Recommended</TabsTrigger>
+            <TabsTrigger value="recommended">추천</TabsTrigger>
+            <TabsTrigger value="all">모든 문제</TabsTrigger>
           </TabsList>
         </Tabs>
       )}
-      
+
       <div className="pb-4">
         {feedType === "recommended" && isAuthenticated && (
           <div className="flex justify-end mb-2">
@@ -192,20 +237,20 @@ export function FeedView() {
             </Button>
           </div>
         )}
-        
+
         {problems && problems.length > 0 ? (
           <>
             {problems.map((problemData) => (
-              <ProblemCard 
-                key={problemData.problem.id} 
-                problemData={problemData} 
+              <ProblemCard
+                key={problemData.problem.id}
+                problemData={problemData}
                 onSolved={handleProblemSolved}
               />
             ))}
-            
+
             {/* 무한 스크롤을 위한 관찰 요소 */}
-            <div 
-              ref={loadMoreRef} 
+            <div
+              ref={loadMoreRef}
               className="h-10 flex items-center justify-center mb-4"
             >
               {isFetchingNext ? (
@@ -220,14 +265,14 @@ export function FeedView() {
         ) : (
           <div className="flex flex-col items-center justify-center h-96 p-4">
             <h3 className="text-lg font-semibold mb-2">
-              {feedType === "recommended" 
-                ? "No more problems to solve" 
-                : "No problems found"}
+              {feedType === "recommended"
+                ? "Wumpus는 놀랐어요"
+                : "진공 상태의 우주."}
             </h3>
             <p className="text-gray-500">
-              {feedType === "recommended" 
-                ? "You've solved all available problems!" 
-                : "Be the first to upload a math problem!"}
+              {feedType === "recommended"
+                ? "풀 수 있는 모든 문제 다 푸셨네요! ㅊㅋㅊㅋ"
+                : "뭐라도 좀 올려봐요 허전하니까"}
             </p>
           </div>
         )}
@@ -245,14 +290,13 @@ function OptionsMenu({ isAuthenticated }: { isAuthenticated: boolean }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {isAuthenticated && (
-          <DropdownMenuItem asChild>
-            <a href="/admin">Admin Dashboard</a>
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem asChild>
-          <a href="https://github.com/yourusername/mathsolve" target="_blank" rel="noopener noreferrer">
-            About MathSolve
+          <a
+            href="https://github.com/jms080809/mathmath"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
           </a>
         </DropdownMenuItem>
       </DropdownMenuContent>

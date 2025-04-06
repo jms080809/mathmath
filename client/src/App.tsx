@@ -12,6 +12,7 @@ import AdminPage from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
 import ProblemDetailPage from "@/pages/problem-detail";
 import UserProfilePage from "@/pages/user-profile";
+import LeaderboardPage from "./pages/leaderboard";
 
 function Router() {
   return (
@@ -23,6 +24,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/problem/:id" component={ProblemDetailPage} />
       <Route path="/user/:userId" component={UserProfilePage} />
+      <Route path="/leaderboard" component={LeaderboardPage} />
+
       <Route component={NotFound} />
     </Switch>
   );

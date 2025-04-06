@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { User } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,7 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password });
+      const response = await apiRequest("POST", "/api/auth/login", {
+        username,
+        password,
+      });
       const userData = await response.json();
       setUser(userData);
       toast({
@@ -72,7 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid credentials",
+        description:
+          error instanceof Error ? error.message : "Invalid credentials",
         variant: "destructive",
       });
       return false;
@@ -81,7 +91,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (username: string, password: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth/register", { username, password });
+      const response = await apiRequest("POST", "/api/auth/register", {
+        username,
+        password,
+      });
       const userData = await response.json();
       setUser(userData);
       toast({
@@ -93,7 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: error instanceof Error ? error.message : "Could not create account",
+        description:
+          error instanceof Error ? error.message : "Could not create account",
         variant: "destructive",
       });
       return false;
@@ -104,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRequest("POST", "/api/auth/logout", {});
       setUser(null);
+      localStorage.removeItem("login_info");
       toast({
         title: "Logged out",
         description: "You have been logged out successfully.",
@@ -122,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiRequest("PUT", "/api/users/me", userData);
       const updatedUser = await response.json();
-      setUser(prev => prev ? { ...prev, ...updatedUser } : updatedUser);
+      setUser((prev) => (prev ? { ...prev, ...updatedUser } : updatedUser));
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
@@ -132,7 +147,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Update user error:", error);
       toast({
         title: "Update failed",
-        description: error instanceof Error ? error.message : "Could not update profile",
+        description:
+          error instanceof Error ? error.message : "Could not update profile",
         variant: "destructive",
       });
       return false;

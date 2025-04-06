@@ -12,7 +12,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Initialize SQLite database
-const sqlite = new Database("mathsolve.db");
+const sqlite = new Database("mathmath.db");
 
 // Create database instance
 export const db = drizzle(sqlite, { schema });
@@ -20,7 +20,7 @@ export const db = drizzle(sqlite, { schema });
 // Create tables using SQL
 try {
   console.log("Ensuring database tables exist...");
-  
+
   // Create users table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -35,7 +35,7 @@ try {
       is_admin INTEGER NOT NULL DEFAULT 0
     )
   `);
-  
+
   // Create problems table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS problems (
@@ -52,7 +52,7 @@ try {
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
-  
+
   // Create solved_problems table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS solved_problems (
@@ -63,7 +63,7 @@ try {
       points_earned INTEGER NOT NULL
     )
   `);
-  
+
   // Create saved_problems table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS saved_problems (
@@ -73,7 +73,7 @@ try {
       saved_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
-  
+
   console.log("Database ready!");
 } catch (error) {
   console.error("Error setting up database:", error);
